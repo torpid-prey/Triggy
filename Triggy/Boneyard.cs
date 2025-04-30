@@ -9,7 +9,8 @@ namespace triggy
 {
     class Boneyard
     {
-
+        // this is just a file containing old removed code as I try to get ideas fleshed out.
+        // its contents is entirely inconsequential to the application
 
         ///// <summary>
         ///// Define new default instance of TriangleSolver with an equalateral triangle
