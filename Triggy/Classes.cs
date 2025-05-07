@@ -1,18 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Reflection.Metadata;
-using System.Runtime.CompilerServices;
-using System.Security.Cryptography;
-using System.Security.Permissions;
-using System.Text;
-using System.Threading.Tasks;
-using triggy;
+﻿using System.Diagnostics;
 
 namespace triggy
 {
-
+    /// <summary>
+    /// Describe completion status of <see cref="OpposingPair"/> objects.
+    /// </summary>
     enum PairStatus
     {
         NEITHER = 0,
@@ -21,11 +13,19 @@ namespace triggy
         BOTH = 3
     };
 
+    public struct ERRMSG
+    {
+        public const string OneAngle180 = "One angle cannot be greater than 180 degrees.";
+        public const string TwoAngle180 = "Two angles cannot total greater than 180 degrees.";
+        public const string OneSide = "One side cannot be longer than the other two sides.";
+        public const string AngleTooLarge = "Angle is too large. No intersection could be found.";
+    }
+
     public struct FRM
     {
         public const int HEIGHT = 600;          // height
         public const int WIDTH = 800;           // width
-        public const int BORDER = 10;           // border
+        public const int BORDER = 6;            // border
         public const int BORDER2 = 2 * BORDER;  // double border size
         public const int INSET = 30;            // triangle inset from workarea on one edge
         public const int INSET2 = 2 * INSET;    // triangle inset from workarea on both edges
@@ -39,15 +39,12 @@ namespace triggy
 
     public struct BTN
     {
-        public const int HEIGHT = 40; // button height
+        public const int HEIGHT = 34; // button height
         public const int WIDTH = 100; // button width
     }
 
-
-
     public static class Extensions
     {
-
         /// <summary>
         /// Returns textbox value as double
         /// </summary>
@@ -83,9 +80,10 @@ namespace triggy
 
 
     /// <summary>
-    /// Angle that calculates both degrees and radians
+    /// Angle that calculates both degrees and radians.
+    /// <para>Operators use degrees value by default.</para>
     /// </summary>
-    internal class Angle
+    internal class Angle : IEquatable<Angle>, IComparable<Angle>
     {
         /// <summary>
         /// local member that stores degrees value
@@ -113,7 +111,6 @@ namespace triggy
             }
         }
 
-
         /// <summary>
         /// Set Radians and convert to Degrees
         /// </summary>
@@ -133,7 +130,7 @@ namespace triggy
         /// <summary>
         /// Determines if <see cref="Angle"/> = 0
         /// </summary>
-        internal bool Empty
+        internal bool IsEmpty
         {
             get
             {
@@ -157,30 +154,228 @@ namespace triggy
         }
 
         /// <summary>
-        /// Deduce the remaining angle by subtracting the two angles from 180 degrees
+        /// Returns the current value to zero
         /// </summary>
-        /// <param name="A"></param>
-        /// <param name="B"></param>
-        /// <param name="resultMessages"></param>
-        /// <returns></returns>
-        internal bool Deduce(OpposingPair A, OpposingPair B, ref List<string> resultMessages)
+        internal void Clear()
         {
-            // ensure all angles combined are less than 180 degrees
-            if (Degrees < 180 && (A.Vertex.Degrees + B.Vertex.Degrees) < 180)
-            {
-                // calculate the angle
-                Degrees = 180 - A.Vertex.Degrees - B.Vertex.Degrees;
+            Degrees = 0;
+        }
 
-                // return success
-                return true;
-            }
-            else
+        public override int GetHashCode()
+        {
+            return Degrees.GetHashCode();
+        }
+
+        // compare against angle
+        public bool Equals(Angle? other)
+        {
+            if (other is null) return false;
+            return Degrees == other.Degrees;
+        }
+
+        // compare against double
+
+        /// <summary>
+        /// Indicates whether the current <see cref="Angle"/> is equal to the equivalent <see cref="double"/> value
+        /// </summary>
+        /// <param name="other"></param>
+        /// <returns></returns>
+        public bool Equals(double other)
+        {
+            return Degrees == other;
+        }
+
+        // compare packaged objects                
+        public override bool Equals(object? obj)
+        {
+            if (obj is null) return false;
+            if (obj is not Angle other) return false;
+            return Equals(other);
+        }
+
+        // compare tos
+
+        public int CompareTo(Angle? other)
+        {
+            if (other is null) return 1;
+            return Degrees.CompareTo(other.Degrees);
+        }
+
+        public int CompareTo(double other)
+        {
+            return Degrees.CompareTo(other);
+        }
+
+        // angle operators
+
+        public static bool operator ==(Angle left, Angle right)
+        {
+            // use default equality check between Angle objects
+            return EqualityComparer<Angle>.Default.Equals(left, right);
+        }
+
+        public static bool operator !=(Angle left, Angle right)
+        {
+            return !(left == right);
+        }
+
+        public static bool operator <(Angle left, Angle right)
+        {
+            return left.CompareTo(right) < 0;
+        }
+
+        public static bool operator >(Angle left, Angle right)
+        {
+            return left.CompareTo(right) > 0;
+        }
+
+        public static bool operator <=(Angle left, Angle right)
+        {
+            return left.CompareTo(right) <= 0;
+        }
+
+        public static bool operator >=(Angle left, Angle right)
+        {
+            return left.CompareTo(right) >= 0;
+        }
+
+        public static double operator +(Angle left, Angle right)
+        {
+            return left.Degrees + right.Degrees;
+        }
+
+        public static double operator -(Angle left, Angle right)
+        {
+            return left.Degrees - right.Degrees;
+        }
+
+        // double operators on right
+
+        public static bool operator ==(Angle left, double right)
+        {
+            return left.Equals(right);
+        }
+
+        public static bool operator !=(Angle left, double right)
+        {
+            return !left.Equals(right);
+        }
+
+        public static bool operator <(Angle left, double right)
+        {
+            return left.CompareTo(right) < 0;
+        }
+
+        public static bool operator >(Angle left, double right)
+        {
+            return left.CompareTo(right) > 0;
+        }
+
+        public static bool operator <=(Angle left, double right)
+        {
+            return left.CompareTo(right) <= 0;
+        }
+
+        public static bool operator >=(Angle left, double right)
+        {
+            return left.CompareTo(right) >= 0;
+        }
+
+        public static double operator +(Angle left, double right)
+        {
+            return left.Degrees + right;
+        }
+
+        public static double operator -(Angle left, double right)
+        {
+            return left.Degrees - right;
+        }
+
+
+        // double operators on left
+
+        public static bool operator ==(double left, Angle right)
+        {
+            return left.Equals(right.Degrees);
+        }
+
+        public static bool operator !=(double left, Angle right)
+        {
+            return !left.Equals(right.Degrees);
+        }
+
+        public static bool operator <(double left, Angle right)
+        {
+            return left.CompareTo(right.Degrees) < 0;
+        }
+
+        public static bool operator >(double left, Angle right)
+        {
+            return left.CompareTo(right.Degrees) > 0;
+        }
+
+        public static bool operator <=(double left, Angle right)
+        {
+            return left.CompareTo(right.Degrees) <= 0;
+        }
+
+        public static bool operator >=(double left, Angle right)
+        {
+            return left.CompareTo(right.Degrees) >= 0;
+        }
+
+        public static double operator +(double left, Angle right)
+        {
+            return left + right.Degrees;
+        }
+
+        public static double operator -(double left, Angle right)
+        {
+            return left - right.Degrees;
+        }
+
+        // Multiplication
+        public static double operator *(Angle left, Angle right)
+        {
+            return left.Degrees * right.Degrees;
+        }
+
+        public static double operator *(Angle left, double right)
+        {
+            return left.Degrees * right;
+        }
+
+        public static double operator *(double left, Angle right)
+        {
+            return left * right.Degrees;
+        }
+
+        // Division
+        public static double operator /(Angle left, Angle right)
+        {
+            if (right.Degrees == 0)
             {
-                // record error
-                resultMessages.Add("Two provided angles must not be greater than 180 degrees.");
+                throw new DivideByZeroException("Cannot divide by an Angle with a value of zero degrees.");
             }
-            // return incomplete
-            return false;
+            return left.Degrees / right.Degrees;
+        }
+
+        public static double operator /(Angle left, double right)
+        {
+            if (right == 0)
+            {
+                throw new DivideByZeroException("Cannot divide by zero.");
+            }
+            return left.Degrees / right;
+        }
+
+        public static double operator /(double left, Angle right)
+        {
+            if (right.Degrees == 0)
+            {
+                throw new DivideByZeroException("Cannot divide by an Angle with a value of zero degrees.");
+            }
+            return left / right.Degrees;
         }
 
         /// <summary>
@@ -198,7 +393,7 @@ namespace triggy
     /// Side that calculates itself raised to power of 2 if required
     /// <br>Can also include method to scale when required</br>
     /// </summary>
-    internal class Length
+    internal class Length : IEquatable<Length>, IComparable<Length>
     {
         /// <summary>
         /// Gets or sets the side Value
@@ -206,7 +401,8 @@ namespace triggy
         internal double Value { get; set; }
 
         /// <summary>
-        /// Returns Value to the power of 2
+        /// Gets the value squared or sets the squareroot value
+        /// <para>Updated to accept a Set method as well</para>
         /// </summary>
         internal double Squared
         {
@@ -214,6 +410,11 @@ namespace triggy
             {
                 // return value to power of 2
                 return Math.Pow(Value, 2);
+            }
+            set
+            {
+                // store the square root of value
+                Value = Math.Sqrt(value);
             }
         }
 
@@ -237,7 +438,7 @@ namespace triggy
         /// <summary>
         /// Determine if the side value is empty
         /// </summary>
-        internal bool Empty
+        internal bool IsEmpty
         {
             get
             {
@@ -246,11 +447,227 @@ namespace triggy
         }
 
         /// <summary>
-        /// Clears the current side value
+        /// Returns the current value to zero
         /// </summary>
         internal void Clear()
         {
             Value = 0;
+        }
+
+        // equality checks
+
+        public bool Equals(Length? other)
+        {
+            if (other is null) return false;
+            return Value == other.Value;
+        }
+
+        /// <summary>
+        /// Indicates whether the current <see cref="Length"/> is equal to the equivalent <see cref="double"/> value
+        /// </summary>
+        /// <param name="other"></param>
+        /// <returns></returns>
+        public bool Equals(double other)
+        {
+            return Value == other;
+        }
+
+        // compare packaged objects                
+        public override bool Equals(object? obj)
+        {
+            if (obj is null) return false;
+            if (obj is not Length other) return false;
+            return Equals(other);
+        }
+
+        public override int GetHashCode()
+        {
+            return Value.GetHashCode();
+        }
+
+        // compare tos
+
+        public int CompareTo(Length? other)
+        {
+            if (other is null) return 1;
+            return Value.CompareTo(other.Value);
+        }
+
+        public int CompareTo(double other)
+        {
+            return Value.CompareTo(other);
+        }
+
+        // lengths operators
+
+        public static bool operator ==(Length left, Length right)
+        {
+            return EqualityComparer<Length>.Default.Equals(left, right);
+        }
+
+        public static bool operator !=(Length left, Length right)
+        {
+            return !(left == right);
+        }
+
+        public static bool operator <(Length left, Length right)
+        {
+            return left.CompareTo(right) < 0;
+        }
+
+        public static bool operator >(Length left, Length right)
+        {
+            return left.CompareTo(right) > 0;
+        }
+
+        public static bool operator <=(Length left, Length right)
+        {
+            return left.CompareTo(right) <= 0;
+        }
+
+        public static bool operator >=(Length left, Length right)
+        {
+            return left.CompareTo(right) >= 0;
+        }
+
+        // double operators on right
+
+        public static bool operator ==(Length left, double right)
+        {
+            return left.Equals(right);
+        }
+
+        public static bool operator !=(Length left, double right)
+        {
+            return !left.Equals(right);
+        }
+
+        public static bool operator <(Length left, double right)
+        {
+            return left.CompareTo(right) < 0;
+        }
+
+        public static bool operator >(Length left, double right)
+        {
+            return left.CompareTo(right) > 0;
+        }
+
+        public static bool operator <=(Length left, double right)
+        {
+            return left.CompareTo(right) <= 0;
+        }
+
+        public static bool operator >=(Length left, double right)
+        {
+            return left.CompareTo(right) >= 0;
+        }
+
+        // double operators on left
+
+        public static bool operator ==(double left, Length right)
+        {
+            return left.Equals(right.Value);
+        }
+
+        public static bool operator !=(double left, Length right)
+        {
+            return !left.Equals(right.Value);
+        }
+
+        public static bool operator <(double left, Length right)
+        {
+            return left.CompareTo(right.Value) < 0;
+        }
+
+        public static bool operator >(double left, Length right)
+        {
+            return left.CompareTo(right.Value) > 0;
+        }
+
+        public static bool operator <=(double left, Length right)
+        {
+            return left.CompareTo(right.Value) <= 0;
+        }
+
+        public static bool operator >=(double left, Length right)
+        {
+            return left.CompareTo(right.Value) >= 0;
+        }
+
+        // Addition
+        public static double operator +(Length left, Length right)
+        {
+            return left.Value + right.Value;
+        }
+
+        public static double operator +(Length left, double right)
+        {
+            return left.Value + right;
+        }
+
+        public static double operator +(double left, Length right)
+        {
+            return left + right.Value;
+        }
+
+        // Subtraction
+        public static double operator -(Length left, Length right)
+        {
+            return left.Value - right.Value;
+        }
+
+        public static double operator -(Length left, double right)
+        {
+            return left.Value - right;
+        }
+
+        public static double operator -(double left, Length right)
+        {
+            return left - right.Value;
+        }
+
+        // Multiplication
+        public static double operator *(Length left, Length right)
+        {
+            return left.Value * right.Value;
+        }
+
+        public static double operator *(Length left, double right)
+        {
+            return left.Value * right;
+        }
+
+        public static double operator *(double left, Length right)
+        {
+            return left * right.Value;
+        }
+
+        // Division
+        public static double operator /(Length left, Length right)
+        {
+            if (right.Value == 0)
+            {
+                throw new DivideByZeroException("Cannot divide by a Length with a value of zero.");
+            }
+            return left.Value / right.Value;
+        }
+
+        public static double operator /(Length left, double right)
+        {
+            if (right == 0)
+            {
+                throw new DivideByZeroException("Cannot divide by zero.");
+            }
+            return left.Value / right;
+        }
+
+        public static double operator /(double left, Length right)
+        {
+            if (right.Value == 0)
+            {
+                throw new DivideByZeroException("Cannot divide by a Length with a value of zero.");
+            }
+            return left / right.Value;
         }
 
         /// <summary>
@@ -261,12 +678,83 @@ namespace triggy
         {
             return Value.ToString("0.00");
         }
-
     } // Length
 
 
+    /// <summary>
+    /// Collection of points that can be used to define a triangle
+    /// </summary>
+    internal class PointTrio
+    {
+        internal Point P1 { get; set; }
+        internal Point P2 { get; set; }
+        internal Point P3 { get; set; }
 
+        /// <summary>
+        /// Define empty collection of points
+        /// </summary>
+        internal PointTrio()
+        {
+            P1 = new();
+            P2 = new();
+            P3 = new();
+        }
 
+        /// <summary>
+        /// Define collection of points that can be used to define a triangle
+        /// </summary>
+        /// <param name="p1"></param>
+        /// <param name="p2"></param>
+        /// <param name="p3"></param>
+        internal PointTrio(Point p1, Point p2, Point p3)
+        {
+            P1 = p1;
+            P2 = p2;
+            P3 = p3;
+        }
+
+        /// <summary>
+        /// Define collection of points that can be used to define a triangle
+        /// </summary>
+        /// <param name="pointTrio"></param>
+        internal PointTrio(PointTrio pointTrio)
+        {
+            P1 = pointTrio.P1;
+            P2 = pointTrio.P2;
+            P3 = pointTrio.P3;
+        }
+
+        /// <summary>
+        /// Gets value indicating whether any points are empty
+        /// </summary>
+        internal bool IsEmpty
+        {
+            get
+            {
+                return P1.IsEmpty || P2.IsEmpty || P3.IsEmpty;
+            }
+        }
+
+        /// <summary>
+        /// Returns all points to their default empty value
+        /// </summary>
+        internal void Clear()
+        {
+            P1 = new();
+            P2 = new();
+            P3 = new();
+        }
+
+        /// <summary>
+        /// Returns the trio of <see cref="Point"/> objects as an array
+        /// </summary>
+        /// <returns></returns>
+        internal Point[] ToArray()
+        {
+            return [P1, P2, P3];
+        }
+
+    } // PointTrio
 
 
     /// <summary>
@@ -284,8 +772,8 @@ namespace triggy
             if (!_disposed)
             {
                 // Clear references to TextBox objects
-                if (txtVertex != null) txtVertex.Text = string.Empty;
-                if (txtSide != null) txtSide.Text = string.Empty;
+                if (_txtVertex != null) _txtVertex.Text = string.Empty;
+                if (_txtSide != null) _txtSide.Text = string.Empty;
 
                 // Dispose of the triangle solver
                 _disposed = true;
@@ -305,8 +793,8 @@ namespace triggy
         internal Length Side { get; set; }
 
         // textbox references for quick update
-        private readonly TextBox? txtVertex = null;
-        private readonly TextBox? txtSide = null;
+        private readonly TextBox? _txtVertex = null;
+        private readonly TextBox? _txtSide = null;
 
         /// <summary>
         /// Determine if this instance contains Side, Angle, Both or Neither
@@ -316,20 +804,28 @@ namespace triggy
             get
             {
                 int result = (int)PairStatus.NEITHER;
-                if (!Side.Empty) { result += (int)PairStatus.SIDE; }
-                if (!Vertex.Empty) { result += (int)PairStatus.ANGLE; }
+                if (!Side.IsEmpty) { result += (int)PairStatus.SIDE; }
+                if (!Vertex.IsEmpty) { result += (int)PairStatus.ANGLE; }
                 return (PairStatus)result;
             }
         }
 
+        /// <summary>
+        /// Returns Vertex <see cref="Angle"/> and Side <see cref="Length"/> values to zero.
+        /// </summary>
+        internal void Clear()
+        {
+            Vertex.Clear();
+            Side.Clear();
+        }
 
         /// <summary>
         /// Determines if the side is defined
         /// </summary>
         /// <returns></returns>
-        internal bool HasSide()
+        internal bool IsSideDefined()
         {
-            return !Side.Empty;
+            return !Side.IsEmpty;
         }
 
         /// <summary>
@@ -337,19 +833,19 @@ namespace triggy
         /// </summary>
         /// <param name="accum">Accumulate number of sides</param>
         /// <returns></returns>
-        internal bool HasSide(ref int accum)
+        internal bool IsSideDefined(ref int accum)
         {
-            if (!Side.Empty) { accum++; }
-            return !Side.Empty;
+            if (!Side.IsEmpty) { accum++; }
+            return !Side.IsEmpty;
         }
 
         /// <summary>
         /// Determines if the angle is defined
         /// </summary>
         /// <returns></returns>
-        internal bool HasAngle()
+        internal bool IsVertexDefined()
         {
-            return !Vertex.Empty;
+            return !Vertex.IsEmpty;
         }
 
         /// <summary>
@@ -357,10 +853,10 @@ namespace triggy
         /// </summary>
         /// <param name="accum">Accumulate number of angles</param>
         /// <returns></returns>
-        internal bool HasAngle(ref int accum)
+        internal bool IsVertexDefined(ref int accum)
         {
-            if (!Vertex.Empty) { accum++; }
-            return !Vertex.Empty;
+            if (!Vertex.IsEmpty) { accum++; }
+            return !Vertex.IsEmpty;
         }
 
         /// <summary>
@@ -372,6 +868,10 @@ namespace triggy
             // initialise the private fields not the properties
             Vertex = new Angle();
             Side = new Length();
+
+            // empty textboxes
+            _txtSide = null;
+            _txtVertex = null;
         }
 
         /// <summary>
@@ -386,8 +886,8 @@ namespace triggy
             Side = new Length(side.ToDouble());
 
             // store textboxes if specified
-            txtVertex = vertex;
-            txtSide = side;
+            _txtVertex = vertex;
+            _txtSide = side;
         }
 
         /// <summary>
@@ -399,6 +899,94 @@ namespace triggy
             // initialise the private fields not the properties
             Vertex = new Angle(existing.Vertex.Degrees);
             Side = new Length(existing.Side.Value);
+
+            // empty textboxes
+            _txtSide = null;
+            _txtVertex = null;
+        }
+
+        /// <summary>
+        /// Get the remaining vertex angle using other vertex angles
+        /// </summary>
+        /// <param name="A"></param>
+        /// <param name="B"></param>
+        internal bool GetAngle(Angle vertexA, Angle vertexB, ref HashSet<string> resultMessages)
+        {
+            if (!vertexA.IsEmpty && !vertexB.IsEmpty)
+            {
+                // check combined angles
+                if (vertexA + vertexB < 180)
+                {
+                    // calculate the angle
+                    Vertex.Degrees = 180 - vertexA - vertexB;
+
+                    // return success
+                    return true;
+                }
+                else
+                {
+                    // record error
+                    resultMessages.Add(ERRMSG.TwoAngle180);
+                }
+            }
+
+            // return incomplete
+            return false;
+        }
+
+        /// <summary>
+        /// Get current vertex angle using complete <see cref="OpposingPair"/>
+        /// <br>Requires side value to be defined in the current <see cref="OpposingPair"/></br>
+        /// </summary>
+        internal bool GetAngle(OpposingPair pair, ref HashSet<string> resultMessages)
+        {
+            if (!Side.IsEmpty && pair.GetStatus == PairStatus.BOTH)
+            {
+                double _asin = (Side * Math.Sin(pair.Vertex.Radians)) / pair.Side;
+
+                if (_asin >= -1 && _asin <= 1)
+                {
+                    // calculate result in radians
+                    Vertex.Radians = Math.Asin(_asin);
+
+                    // angle must be between 0 and 180 (not inclusive)
+                    if (Vertex >= 0 && Vertex <= 180)
+                    {
+                        // ensure angle found is within accepted limits
+                        return true;
+                    }
+                    else
+                    {
+                        // determine what causes this error
+                        resultMessages.Add(ERRMSG.AngleTooLarge);
+                    }
+                }
+                else
+                {
+                    // determine what causes this error
+                    resultMessages.Add(ERRMSG.AngleTooLarge);
+                }
+            }
+            return false;
+        }
+
+        /// <summary>
+        /// Get current vertex angle using <see cref="Length"/> from two adjacent sides.
+        /// <br>Requires side value to be defined in the current <see cref="OpposingPair"/></br>
+        /// </summary>
+        /// <param name="B"></param>
+        /// <param name="C"></param>
+        internal bool GetAngle(Length sideB, Length sideC)
+        {
+            if (!Side.IsEmpty)
+            {
+                // calculate result in radians
+                Vertex.Radians = Math.Acos((sideB.Squared + sideC.Squared - Side.Squared) / (2 * sideB * sideC));
+
+                return true;
+            }
+
+            return false;
         }
 
         /// <summary>
@@ -408,11 +996,12 @@ namespace triggy
         /// <param name="C"></param>
         /// <param name="returnMessage"></param>
         /// <returns></returns>
-        internal bool Check(OpposingPair B, OpposingPair C, ref List<string> returnMessage)
+        internal bool CheckSide(OpposingPair pairB, OpposingPair pairC, ref HashSet<string> returnMessage)
         {
-            if (Side.Value > B.Side.Value + C.Side.Value)
+            // check side length against sum of other two sides
+            if (Side > pairB.Side + pairC.Side)
             {
-                returnMessage.Add("One side cannot be longer than the other two sides.");
+                returnMessage.Add(ERRMSG.OneSide);
                 return false;
             }
 
@@ -420,55 +1009,26 @@ namespace triggy
         }
 
         /// <summary>
-        /// Get the remaining vertex angle using other vertex angles
-        /// </summary>
-        /// <param name="A"></param>
-        /// <param name="B"></param>
-        internal bool GetAngle(Angle A, Angle B, ref List<string> resultMessages)
-        {
-            if (!A.Empty && !B.Empty)
-            {
-                if (A.Degrees + B.Degrees < 180)
-                {
-                    // calculate the angle
-                    Vertex = new Angle(180 - A.Degrees - B.Degrees);
-
-                    // return success
-                    return true;
-                }
-                else
-                {
-                    // record error
-                    resultMessages.Add("Two provided angles must not be greater than 180 degrees.");
-                }
-            }
-
-            // return incomplete
-            return false;
-        }
-
-        /// <summary>
         /// Get side value using complete <see cref="OpposingPair"/>
         /// <br>Requires vertex angle to be defined in the current <see cref="OpposingPair"/></br>
         /// </summary>
         /// <param name="C"></param>
-        internal bool GetSide(OpposingPair B, ref List<string> resultMessages)
+        internal bool GetSide(OpposingPair pairB, ref HashSet<string> resultMessages)
         {
-            // may be other checks to ensure pair is valid before proceeding
-
-            if (!Vertex.Empty && B.GetStatus == PairStatus.BOTH)
+            if (!Vertex.IsEmpty && pairB.GetStatus == PairStatus.BOTH)
             {
-                if (Vertex.Degrees < 180)
+                // ensure angle is valid
+                if (Vertex < 180)
                 {
                     // calculate own side using another complete opposing pair and own angle
-                    Side.Value = (B.Side.Value * Math.Sin(Vertex.Radians)) / Math.Sin(B.Vertex.Radians);
+                    Side.Value = (pairB.Side * Math.Sin(Vertex.Radians)) / Math.Sin(pairB.Vertex.Radians);
 
                     return true;
                 }
                 else
                 {
                     // record error
-                    resultMessages.Add("Provided angle must not be greater than 180 degrees.");
+                    resultMessages.Add(ERRMSG.OneAngle180);
                 }
             }
 
@@ -481,79 +1041,23 @@ namespace triggy
         /// </summary>
         /// <param name="B"></param>
         /// <param name="C"></param>
-        internal bool GetSide(Length B, Length C, ref List<string> resultMessages)
+        internal bool GetSide(Length sideB, Length sideC, ref HashSet<string> resultMessages)
         {
-            // may be  other checks to ensure pair is valid before proceeding
-
-            if (!Vertex.Empty && !B.Empty && !C.Empty)
+            // ensure angle and both lengths are defined
+            if (!Vertex.IsEmpty && !sideB.IsEmpty && !sideC.IsEmpty)
             {
-                if (Vertex.Degrees < 180)
+                // ensure angle is within limits
+                if (Vertex < 180)
                 {
                     // calculate own side using adjacent sides and own angle
-                    Side.Value = Math.Sqrt(B.Squared + C.Squared - 2 * B.Value * C.Value * Math.Cos(Vertex.Radians));
+                    Side.Squared = sideB.Squared + sideC.Squared - 2 * sideB * sideC * Math.Cos(Vertex.Radians);
 
                     return true;
                 }
                 else
                 {
                     // record error
-                    resultMessages.Add("Provided angle must not be greater than 180 degrees.");
-                }
-            }
-
-            return false;
-        }
-
-        /// <summary>
-        /// Get current vertex angle using complete <see cref="OpposingPair"/>
-        /// <br>Requires side value to be defined in the current <see cref="OpposingPair"/></br>
-        /// </summary>
-        internal bool GetAngle(OpposingPair B, ref List<string> resultMessages)
-        {
-            if (!Side.Empty && B.GetStatus == PairStatus.BOTH)
-            {
-                double _asin = (Side.Value * Math.Sin(B.Vertex.Radians)) / B.Side.Value;
-
-                if (_asin >= -1 && _asin <= 1)
-                {
-                    // calculate result in radians
-                    Vertex.Radians = Math.Asin(_asin);
-
-                    return true;
-                }
-                else
-                {
-                    // determine what causes this error
-                    resultMessages.Add("Value for angle is too large. No intersection could be found.");
-                }
-            }
-            return false;
-        }
-
-        /// <summary>
-        /// Get current vertex angle using <see cref="Length"/> from two adjacent sides.
-        /// <br>Requires side value to be defined in the current <see cref="OpposingPair"/></br>
-        /// </summary>
-        /// <param name="B"></param>
-        /// <param name="C"></param>
-        internal bool GetAngle(Length B, Length C, ref List<string> resultMessages)
-        {
-            // determine if there are other checks to ensure this will work
-
-            if (!Side.Empty)
-            {
-                try
-                {
-                    // calculate result in radians
-                    Vertex.Radians = Math.Acos((B.Squared + C.Squared - Side.Squared) / (2 * B.Value * C.Value));
-
-                    return true;
-
-                }
-                catch (Exception ex)
-                {
-                    // provide error 
-                    resultMessages.Add(ex.Message);
+                    resultMessages.Add(ERRMSG.OneAngle180);
                 }
             }
 
@@ -565,16 +1069,16 @@ namespace triggy
         /// </summary>
         internal void SetTextBoxValues()
         {
-            if (txtVertex != null)
+            if (_txtVertex != null)
             {
                 // clear if zero, otherwise set value
-                txtVertex.Text = Vertex.Degrees == 0 ? string.Empty : Vertex.Degrees.ToString("0.00");
+                _txtVertex.Text = Vertex == 0 ? string.Empty : Vertex.ToString();
             }
 
-            if (txtSide != null)
+            if (_txtSide != null)
             {
                 // clear if zero, otherwise set value
-                txtSide.Text = Side.Value == 0 ? string.Empty : Side.Value.ToString("0.00");
+                _txtSide.Text = Side.Value == 0 ? string.Empty : Side.ToString();
             }
 
         }
@@ -584,8 +1088,8 @@ namespace triggy
         /// </summary>
         internal void GetTextBoxValues()
         {
-            if (txtVertex != null) Vertex.Degrees = txtVertex.ToDouble();
-            if (txtSide != null) Side.Value = txtSide.ToDouble();
+            if (_txtVertex != null) Vertex.Degrees = _txtVertex.ToDouble();
+            if (_txtSide != null) Side.Value = _txtSide.ToDouble();
         }
 
         /// <summary>
@@ -628,7 +1132,9 @@ namespace triggy
 
         }
 
-        // Main triangle
+        // private fields
+
+        // Main triangle pairs
         private OpposingPair _a;
         private OpposingPair _b;
         private OpposingPair _c;
@@ -638,19 +1144,7 @@ namespace triggy
         private double _origSideB;
         private double _origSideC;
 
-        /// <summary>
-        /// Store original sides if side values are not empty
-        /// </summary>
-        /// <param name="a"></param>
-        /// <param name="b"></param>
-        /// <param name="c"></param>
-        internal void SetOriginalSides()
-        {
-            // store original side lengths for dynamic scaling
-            if (_a.HasSide()) { _origSideA = _a.Side.Value; }
-            if (_b.HasSide()) { _origSideB = _b.Side.Value; }
-            if (_c.HasSide()) { _origSideC = _c.Side.Value; }
-        }
+        // reference properties
 
         /// <summary>
         /// Returns the bottom right angle and opposing left side
@@ -676,12 +1170,12 @@ namespace triggy
             get { return ref _c; }
         }
 
+        // constructors
+
         /// <summary>
         /// Returns instance of alternate triangle used to determine height and complete width
         /// </summary>
         internal TriangleSolver? AltTriangle { get; private set; }
-
-
 
         /// <summary>
         /// Define new <see cref="TriangleSolver"/> from known <see cref="OpposingPair"/> objects
@@ -695,7 +1189,6 @@ namespace triggy
             _b = b;
             _c = c;
         }
-
 
         /// <summary>
         /// Define new <see cref="TriangleSolver"/> from existing <see cref="TriangleSolver"/> object
@@ -716,11 +1209,124 @@ namespace triggy
             {
                 // copy alt triangle if available
                 AltTriangle = new TriangleSolver(triangle.AltTriangle);
-
-                //// store original side lengths for dynamic scaling
-                //AltTriangle.SetOriginalSides();
-
             }
+        }
+
+        // internal properties
+
+        /// <summary>
+        /// Returns a string array of results for both the main and alternate triangles
+        /// </summary>
+        /// <returns></returns>
+        internal string[] ResultList
+        {
+            get
+            {
+                List<string> result =
+                [
+                    $"A° {_a.Vertex.Degrees:0.00}",
+                    $"a  {_a.Side.Value:0.00}",
+                    $"B° {_b.Vertex.Degrees:0.00}",
+                    $"b  {_b.Side.Value:0.00}",
+                    $"C° {_c.Vertex.Degrees:0.00}",
+                    $"c  {_c.Side.Value:0.00}",
+                ];
+
+                if (AltTriangle != null)
+                {
+                    result.Add("");
+                    result.Add($"D° {AltTriangle._a.Vertex.Degrees:0.00}");
+                    result.Add($"d  {AltTriangle._a.Side.Value:0.00}");
+                    result.Add($"E° {AltTriangle._b.Vertex.Degrees:0.00}");
+                    result.Add($"e  {AltTriangle._b.Side.Value:0.00}");
+                    result.Add($"F° {AltTriangle._c.Vertex.Degrees:0.00}");
+                    result.Add($"f  {AltTriangle._c.Side.Value:0.00}");
+                }
+
+                return result.ToArray();
+            }
+        }
+
+        /// <summary>
+        /// Determines if the current instance contains sufficient data to solve
+        /// <p>Does not yet check validity of data</p>
+        /// </summary>
+        /// <returns></returns>
+        internal bool IsSufficient
+        {
+            get
+            {
+                int accumLength = 0;
+                int accumAngle = 0;
+
+                // count pairs with side length defined
+                A.IsSideDefined(ref accumLength);
+                B.IsSideDefined(ref accumLength);
+                C.IsSideDefined(ref accumLength);
+
+                // count pairs with vertex angle defined
+                A.IsVertexDefined(ref accumAngle);
+                B.IsVertexDefined(ref accumAngle);
+                C.IsVertexDefined(ref accumAngle);
+
+                // any combination of three values is okay
+                if (accumAngle + accumLength > 2) { return true; }
+
+                // any two vertex angles is okay
+                if (accumAngle > 1) { return true; }
+
+                // insufficient
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Determines if the current instance contains all completed data
+        /// </summary>
+        internal bool IsComplete
+        {
+            get
+            {
+                return _a.GetStatus == PairStatus.BOTH && _b.GetStatus == PairStatus.BOTH && _c.GetStatus == PairStatus.BOTH;
+            }
+        }
+
+        // internal methods
+
+        /// <summary>
+        /// Determine if preliminary angle input data is valid
+        /// </summary>
+        /// <param name="resultMessages"></param>
+        /// <returns></returns>
+        internal bool CheckAngles(ref HashSet<string> resultMessages)
+        {
+            // ensure no one angle is greater than 180
+            if (A.Vertex > 180 || B.Vertex > 180 && C.Vertex > 180)
+            {
+                resultMessages.Add(ERRMSG.OneAngle180);
+                return false;
+            }
+
+            // ensure no two angles are greater than 180
+            if (A.Vertex + B.Vertex > 180 ||
+                B.Vertex + C.Vertex > 180 ||
+                A.Vertex + C.Vertex > 180)
+            {
+                resultMessages.Add(ERRMSG.TwoAngle180);
+                return false;
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// Store original sides if side values are not empty
+        /// </summary>
+        internal void SetOriginalSides()
+        {
+            _origSideA = _a.Side.Value;
+            _origSideB = _b.Side.Value;
+            _origSideC = _c.Side.Value;
         }
 
         /// <summary>
@@ -747,62 +1353,56 @@ namespace triggy
             SetOriginalSides();
         }
 
-        internal string[] GetResultList()
+        /// <summary>
+        /// Returns all vertex <see cref="Angle"/> and side <see cref="Length"/> values to zero
+        /// </summary>
+        internal void Clear()
         {
-            List<string> result =
-            [
-                $"A° {_a.Vertex.Degrees:0.00}",
-                $"a  {_a.Side.Value:0.00}",
-                $"B° {_b.Vertex.Degrees:0.00}",
-                $"b  {_b.Side.Value:0.00}",
-                $"C° {_c.Vertex.Degrees:0.00}",
-                $"c  {_c.Side.Value:0.00}",
-            ];
+            _a.Clear();
+            _b.Clear();
+            _c.Clear();
 
-            if (AltTriangle != null)
-            {
-                result.Add("");
-                result.Add($"D° {AltTriangle._a.Vertex.Degrees:0.00}");
-                result.Add($"d  {AltTriangle._a.Side.Value:0.00}");
-                result.Add($"E° {AltTriangle._b.Vertex.Degrees:0.00}");
-                result.Add($"e  {AltTriangle._b.Side.Value:0.00}");
-                result.Add($"F° {AltTriangle._c.Vertex.Degrees:0.00}");
-                result.Add($"f  {AltTriangle._c.Side.Value:0.00}");
-            }
-
-            return result.ToArray();
+            // remove
+            AltTriangle = null;
         }
 
         /// <summary>
         /// Scale the side lengths of the triangle by a given factor
-        /// <br>Also scales AltTriangle</br>
+        /// <br>Also scales AltTriangle if available</br>
         /// </summary>
         /// <param name="factor"></param>
         internal void Scale(double factor)
         {
-            // Scale main triangle
-            _a.Side.Value = _origSideA * factor;
-            _b.Side.Value = _origSideB * factor;
-            _c.Side.Value = _origSideC * factor;
+            // only scale if all sides are defined
+            // if a solve call returns an error, some sides may not get calculated
+            if (_origSideA > 0 && _origSideB > 0 && _origSideC > 0)
+            {
+                // Scale main triangle
+                _a.Side.Value = _origSideA * factor;
+                _b.Side.Value = _origSideB * factor;
+                _c.Side.Value = _origSideC * factor;
 
-            // Scale alternate triangle if it exists
-            AltTriangle?.Scale(factor);
+                // Scale alternate triangle if not null
+                AltTriangle?.Scale(factor);
+            }
         }
+
+        // solve methods
 
         /// <summary>
         /// Solve triangle using any two angles and one side
         /// </summary>
         /// <param name="resultMessages"></param>
         /// <returns></returns>
-        internal bool SolveASA(ref List<string> resultMessages)
+        internal bool SolveASA(ref HashSet<string> resultMessages)
         {
             // if one side and any two angles are given
 
             // first complete angles if possible
-            if (CompleteAngles(ref resultMessages))
+            if (CalculateAngles(ref resultMessages))
             {
                 // quick check if all sides are empty and assign one
-                if (_a.Side.Empty && _b.Side.Empty && _c.Side.Empty)
+                if (_a.Side.IsEmpty && _b.Side.IsEmpty && _c.Side.IsEmpty)
                 {
                     // assign one side, value does not matter
                     _c.Side.Value = 100;
@@ -846,17 +1446,17 @@ namespace triggy
         /// </summary>
         /// <param name="resultMessages"></param>
         /// <returns></returns>
-        internal bool SolveSSS(ref List<string> resultMessages)
+        internal bool SolveSSS(ref HashSet<string> resultMessages)
         {
-            if (!A.Side.Empty && !B.Side.Empty && !C.Side.Empty)
+            if (!_a.Side.IsEmpty && !_b.Side.IsEmpty && !_c.Side.IsEmpty)
             {
-                if (A.Check(B, C, ref resultMessages) &&
-                    B.Check(A, C, ref resultMessages) &&
-                    C.Check(A, B, ref resultMessages))
+                if (_a.CheckSide(_b, _c, ref resultMessages) &&
+                    _b.CheckSide(_a, _c, ref resultMessages) &&
+                    _c.CheckSide(_a, _b, ref resultMessages))
                 {
-                    if (A.GetAngle(B.Side, C.Side, ref resultMessages) &&
-                        B.GetAngle(A.Side, C.Side, ref resultMessages) &&
-                        C.GetAngle(A.Side, B.Side, ref resultMessages))
+                    if (_a.GetAngle(_b.Side, _c.Side) &&
+                        _b.GetAngle(_a.Side, _c.Side) &&
+                        _c.GetAngle(_a.Side, _b.Side))
                     {
                         CalculateAltTriangle(ref resultMessages);
                         return true;
@@ -872,27 +1472,27 @@ namespace triggy
         /// </summary>
         /// <param name="resultMessages"></param>
         /// <returns></returns>
-        internal bool SolveSAS(ref List<string> resultMessages)
+        internal bool SolveSAS(ref HashSet<string> resultMessages)
         {
-            if (!A.Side.Empty && !B.Vertex.Empty && !C.Side.Empty)
+            if (!_a.Side.IsEmpty && !_b.Vertex.IsEmpty && !_c.Side.IsEmpty)
             {
-                if (SolveSAS(ref A, ref B, ref C, ref resultMessages))
+                if (SolveSAS(ref _a, ref _b, ref _c, ref resultMessages))
                 {
                     CalculateAltTriangle(ref resultMessages);
                     return true;
                 }
             }
-            else if (!A.Side.Empty && !C.Vertex.Empty && !B.Side.Empty)
+            else if (!_a.Side.IsEmpty && !_c.Vertex.IsEmpty && !_b.Side.IsEmpty)
             {
-                if (SolveSAS(ref A, ref C, ref B, ref resultMessages))
+                if (SolveSAS(ref _a, ref _c, ref _b, ref resultMessages))
                 {
                     CalculateAltTriangle(ref resultMessages);
                     return true;
                 }
             }
-            else if (!B.Side.Empty && !A.Vertex.Empty && !C.Side.Empty)
+            else if (!_b.Side.IsEmpty && !_a.Vertex.IsEmpty && !_c.Side.IsEmpty)
             {
-                if (SolveSAS(ref B, ref A, ref C, ref resultMessages))
+                if (SolveSAS(ref _b, ref _a, ref _c, ref resultMessages))
                 {
                     CalculateAltTriangle(ref resultMessages);
                     return true;
@@ -910,7 +1510,7 @@ namespace triggy
         /// <param name="sidePair2"></param>
         /// <param name="resultMessages"></param>
         /// <returns></returns>
-        static private bool SolveSAS(ref OpposingPair sidePair1, ref OpposingPair anglePair, ref OpposingPair sidePair2, ref List<string> resultMessages)
+        static private bool SolveSAS(ref OpposingPair sidePair1, ref OpposingPair anglePair, ref OpposingPair sidePair2, ref HashSet<string> resultMessages)
         {
             bool a, b, c;
 
@@ -918,13 +1518,13 @@ namespace triggy
             b = anglePair.GetSide(sidePair1.Side, sidePair2.Side, ref resultMessages);
 
             // depends which side is smaller
-            if (sidePair1.Side.Value <= sidePair2.Side.Value)
+            if (sidePair1.Side <= sidePair2.Side)
             {
                 // complete angle pair 1
                 a = sidePair1.GetAngle(anglePair, ref resultMessages);
 
                 // complete remaining angle
-                c = sidePair2.Vertex.Deduce(anglePair, sidePair1, ref resultMessages);
+                c = sidePair2.GetAngle(anglePair.Vertex, sidePair1.Vertex, ref resultMessages);
             }
             else
             {
@@ -932,19 +1532,18 @@ namespace triggy
                 a = sidePair2.GetAngle(anglePair, ref resultMessages);
 
                 // complete remaining angle
-                c = sidePair1.Vertex.Deduce(anglePair, sidePair2, ref resultMessages);
+                c = sidePair1.GetAngle(anglePair.Vertex, sidePair2.Vertex, ref resultMessages);
             }
 
             return (a && b && c);
         }
-
 
         /// <summary>
         /// Solve triangle using one angle and two sides, when angle <u>is not</u> between two adjacent sides
         /// </summary>
         /// <param name="resultMessages"></param>
         /// <returns></returns>
-        internal bool SolveSSA(ref List<string> resultMessages)
+        internal bool SolveSSA(ref HashSet<string> resultMessages)
         {
             // if two sides and one angle are given, when the angle is not between adjacent sides
 
@@ -953,60 +1552,62 @@ namespace triggy
             OpposingPair? _empty = null;
 
             // determine which opposing pair is complete
-            if (A.GetStatus == PairStatus.BOTH)
+            if (_a.GetStatus == PairStatus.BOTH)
             {
-                _complete = A;
+                _complete = _a;
 
                 // if B side is defined, then use A to complete B
-                if (!B.Side.Empty)
+                if (!_b.Side.IsEmpty)
                 {
-                    _incomplete = B;
-                    _empty = C;
+                    _incomplete = _b;
+                    _empty = _c;
                 }
                 // if C side is defined, then use C to complete B
-                else if (!C.Side.Empty)
+                else if (!_c.Side.IsEmpty)
                 {
-                    _incomplete = C;
-                    _empty = B;
+                    _incomplete = _c;
+                    _empty = _b;
                 }
             }
-            else if (B.GetStatus == PairStatus.BOTH)
+            else if (_b.GetStatus == PairStatus.BOTH)
             {
-                _complete = B;
+                _complete = _b;
 
                 // if A side is defined, then use B to complete A
-                if (!A.Side.Empty)
+                if (!_a.Side.IsEmpty)
                 {
-                    _incomplete = A;
-                    _empty = C;
+                    _incomplete = _a;
+                    _empty = _c;
                 }
                 // if C side is defined, then use B to complete C
-                else if (!C.Side.Empty)
+                else if (!_c.Side.IsEmpty)
                 {
-                    _incomplete = C;
-                    _empty = A;
+                    _incomplete = _c;
+                    _empty = _a;
                 }
             }
-            else if (C.GetStatus == PairStatus.BOTH)
+            else if (_c.GetStatus == PairStatus.BOTH)
             {
-                _complete = C;
+                _complete = _c;
 
                 // if A side is defined, then use C to complete A
-                if (!A.Side.Empty)
+                if (!_a.Side.IsEmpty)
                 {
-                    _incomplete = A;
-                    _empty = B;
+                    _incomplete = _a;
+                    _empty = _b;
                 }
                 // if B side is defined, then use C to complete B
-                if (!B.Side.Empty)
+                if (!_b.Side.IsEmpty)
                 {
-                    _incomplete = B;
-                    _empty = A;
+                    _incomplete = _b;
+                    _empty = _a;
                 }
             }
 
+            // ensure we have each field assigned
             if (_complete != null && _incomplete != null && _empty != null)
             {
+                // call static function with OpposingPairs in correct order
                 if (SolveSSA(ref _complete, ref _incomplete, ref _empty, ref resultMessages))
                 {
                     CalculateAltTriangle(ref resultMessages);
@@ -1025,7 +1626,7 @@ namespace triggy
         /// <param name="empty">Provide the <see cref="OpposingPair"/> with neither value defined</param>
         /// <param name="resultMessages"></param>
         /// <returns></returns>
-        static private bool SolveSSA(ref OpposingPair complete, ref OpposingPair incomplete, ref OpposingPair empty, ref List<string> resultMessages)
+        static private bool SolveSSA(ref OpposingPair complete, ref OpposingPair incomplete, ref OpposingPair empty, ref HashSet<string> resultMessages)
         {
             bool a, b, c;
 
@@ -1041,38 +1642,35 @@ namespace triggy
             return (a && b && c);
         }
 
+        // private methods
+
         /// <summary>
         /// Attempts to find the last angle provided two angles are defined
         /// </summary>
         /// <param name="resultMessages"></param>
         /// <returns></returns>
-        private bool CompleteAngles(ref List<string> resultMessages)
+        private bool CalculateAngles(ref HashSet<string> resultMessages)
         {
-            if (A.Vertex.Degrees + B.Vertex.Degrees + C.Vertex.Degrees > 180)
+            if (_a.Vertex + _b.Vertex >= 180 ||
+                _a.Vertex + _c.Vertex >= 180 ||
+                _b.Vertex + _c.Vertex >= 180)
             {
-                resultMessages.Add("All angles cannot add up to greater than 180 degrees.");
-                return false;
-            }
-            if (A.Vertex.Degrees + B.Vertex.Degrees >= 180 ||
-                A.Vertex.Degrees + C.Vertex.Degrees >= 180 ||
-                B.Vertex.Degrees + C.Vertex.Degrees >= 180)
-            {
-                resultMessages.Add("Two angles cannot add up to greater than or equal to 180 degrees.");
+                resultMessages.Add(ERRMSG.TwoAngle180);
                 return false;
             }
 
             // try to get C angle
-            if (C.GetAngle(B.Vertex, A.Vertex, ref resultMessages))
+            if (_c.GetAngle(_a.Vertex, _b.Vertex, ref resultMessages))
             {
                 return true;
             }
             // try to get B angle
-            else if (B.GetAngle(A.Vertex, C.Vertex, ref resultMessages))
+            else if (_b.GetAngle(_a.Vertex, _c.Vertex, ref resultMessages))
             {
                 return true;
             }
             // try to get A angle
-            else if (A.GetAngle(B.Vertex, C.Vertex, ref resultMessages))
+            else if (_a.GetAngle(_b.Vertex, _c.Vertex, ref resultMessages))
             {
                 return true;
             }
@@ -1084,42 +1682,42 @@ namespace triggy
         /// Calculate the alternate triangle using the main triangle
         /// </summary>
         /// <param name="resultMessages"></param>
-        private void CalculateAltTriangle(ref List<string> resultMessages)
+        private void CalculateAltTriangle(ref HashSet<string> resultMessages)
         {
-            if (A.Vertex.Degrees == 90 || B.Vertex.Degrees == 90)
+            if (_a.Vertex == 90 || _b.Vertex == 90)
             {
                 // No alternate triangle for this purpose
                 AltTriangle = null;
                 return;
             }
 
-            // define new opposing pairs to define alt triangle from main triangle
+            // define new opposing pairs to define alt triangle from primary triangle
             OpposingPair altD = new();
             OpposingPair altE = new();
             OpposingPair altF = new();
 
-            if (A.Vertex.Degrees <= 90 && B.Vertex.Degrees <= 90)
+            if (_a.Vertex <= 90 && _b.Vertex <= 90)
             {
                 // internal alternative triangle
                 altD.Vertex.Degrees = 90;
-                altE.Vertex.Degrees = B.Vertex.Degrees;
-                altD.Side.Value = A.Side.Value;
+                altE.Vertex.Degrees = _b.Vertex.Degrees;
+                altD.Side.Value = _a.Side.Value;
             }
             else
             {
                 // external alternative triangle
                 altD.Vertex.Degrees = 90;
-                if (A.Vertex.Degrees > B.Vertex.Degrees)
+                if (_a.Vertex > _b.Vertex)
                 {
                     // on the right side
-                    altD.Side.Value = B.Side.Value;
-                    altE.Vertex.Degrees = 180 - A.Vertex.Degrees;
+                    altD.Side.Value = _b.Side.Value;
+                    altE.Vertex.Degrees = 180 - _a.Vertex;
                 }
                 else
                 {
                     // on the left side
-                    altD.Side.Value = A.Side.Value;
-                    altE.Vertex.Degrees = 180 - B.Vertex.Degrees;
+                    altD.Side.Value = _a.Side.Value;
+                    altE.Vertex.Degrees = 180 - _b.Vertex;
                 }
             }
 
@@ -1131,6 +1729,7 @@ namespace triggy
 
         }
 
+        // public overrides
 
         /// <summary>
         /// Returns a string that displays side and vertex details of A, B, and C.
@@ -1138,7 +1737,7 @@ namespace triggy
         /// <returns>A string that represents the current object.</returns>
         public override string ToString()
         {
-            return ("A: " + A.ToString() + " B: " + B.ToString() + " C: " + C.ToString());
+            return ($"A: {_a}  B: {_b}  C: {_c}");
         }
 
     } // Triangle Solver
@@ -1167,14 +1766,14 @@ namespace triggy
         private readonly FormMain _form;
 
         /// <summary>
-        /// The original triangle calcualted using trig based on user input
+        /// The base triangle calcualted from user input using trigonometry
         /// </summary>
-        private TriangleSolver? _mainTriangle;
+        private readonly TriangleSolver _baseTriangle;
 
         /// <summary>
-        /// Copy of the original triangle scaled to fit the workarea based on form size
+        /// Copy of the base triangle to be scaled to fit the workarea
         /// </summary>
-        private TriangleSolver? _scaleTriangle;
+        private TriangleSolver _scaleTriangle;
 
         /// <summary>
         /// Fields defined only from the ImportTriangle method used to determine ratio
@@ -1182,25 +1781,25 @@ namespace triggy
         private double _actualHeight, _actualWidth;
 
         // private pointTrio fields for reference properties
-        private PointTrio _mainPoints;
-        private PointTrio _altPoints;
+        private PointTrio _primaryPoints;
+        private PointTrio _alternatePoints;
 
         /// <summary>
-        /// Trio of points that defines the main triangle
+        /// Trio of points that defines the primary triangle
         /// </summary>
-        internal ref PointTrio MainPoints
+        internal ref PointTrio PrimaryPoints
         {
             // ref keyword allows this property to be used as a reference parameter
-            get { return ref _mainPoints; }
+            get { return ref _primaryPoints; }
         }
 
         /// <summary>
         /// Trio of points that defines the alternate triangle
         /// </summary>
-        internal ref PointTrio AltPoints
+        internal ref PointTrio AlternatePoints
         {
             // ref keyword allows this property to be used as a reference parameter
-            get { return ref _altPoints; }
+            get { return ref _alternatePoints; }
         }
 
         /// <summary>
@@ -1259,81 +1858,84 @@ namespace triggy
             get { return new Rectangle(Left, Top, Width, Height); }
         }
 
-        ///// <summary>
-        ///// Returns the points of the triangle
-        ///// </summary>
-        ///// <returns></returns>
-        //internal Point[] PointArray
-        //{
-        //    get { return [_p1, _p2, _p3]; }
-        //}
-
         /// <summary>
-        ///  do i allow a workarea without a triangle?
+        /// Initialise Workarea and prepare instances of base and scale triangles
         /// </summary>
         /// <param name="form"></param>
-        internal TriangleWorkarea(FormMain form)
+        /// <param name="triangle"></param>
+        internal TriangleWorkarea(FormMain form, TriangleSolver triangle)
         {
             _form = form;
 
-            _mainTriangle = null;
-            _scaleTriangle = null;
+            // store original triangle instance
+            _baseTriangle = triangle;
+            _scaleTriangle = new(triangle);
 
-            _mainPoints = new();
-            _altPoints = new();
+            _primaryPoints = new();
+            _alternatePoints = new();
 
             _form.Resize += OnResize; // add resize handler
+        }
+
+        /// <summary>
+        /// Event handler function so resizing form automatically triggers the triangle to scale and point trio to be updated
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        void OnResize(object? sender, EventArgs e)
+        {
+            // recalculate the workarea bounds
+            Scale();
+
+            // Calculate the points for the main triangle
+            GetPoints(_scaleTriangle, ref PrimaryPoints, ref AlternatePoints);
         }
 
         /// <summary>
         /// Create copy of existing triangle and scale to suit workarea
         /// </summary>
         /// <param name="triangle"></param>
-        internal void ImportTriangle(TriangleSolver triangle)
+        internal void CarbonCopy()
         {
-            // store the original triangle at correct size
-            _mainTriangle = new TriangleSolver(triangle);
-
             // copy triangle so it can be scaled to fit later
-            _scaleTriangle = new TriangleSolver(triangle);
+            _scaleTriangle = new TriangleSolver(_baseTriangle);
 
-            // determine _actualWidth and _actualHeight based on conditions
-            if (_mainTriangle.A.Vertex.Degrees == 90)
+            // check if triangle is sufficient before processing
+            if (_baseTriangle.IsComplete)
             {
-                // Right triangle with A as the right angle (on the right)
-                _actualHeight = _mainTriangle.B.Side.Value;
-                _actualWidth = _mainTriangle.C.Side.Value;
-            }
-            else if (_mainTriangle.B.Vertex.Degrees == 90)
-            {
-                // Right triangle with B as the right angle (on the left)
-                _actualHeight = _mainTriangle.A.Side.Value;
-                _actualWidth = _mainTriangle.C.Side.Value;
-            }
-            else if (_mainTriangle.A.Vertex.Degrees <= 90 && _mainTriangle.B.Vertex.Degrees <= 90)
-            {
-                // Internal alternate triangle when both angles are less than 90 - only determines height
-                _actualHeight = _mainTriangle.AltTriangle?.B.Side.Value ?? 0;
-                _actualWidth = _mainTriangle.C.Side.Value;
-            }
-            else
-            {
-                // External alternate triangle when one angle is greater than 90 - determines height and width
-                _actualHeight = _mainTriangle.AltTriangle?.B.Side.Value ?? 0;
-                _actualWidth = _mainTriangle.C.Side.Value + (_mainTriangle.AltTriangle?.C.Side.Value ?? 0);
-            }
+                // determine _actualWidth and _actualHeight based on conditions
+                if (_baseTriangle.A.Vertex.Degrees == 90)
+                {
+                    // Right triangle with A as the right angle (on the right)
+                    _actualHeight = _baseTriangle.B.Side.Value;
+                    _actualWidth = _baseTriangle.C.Side.Value;
+                }
+                else if (_baseTriangle.B.Vertex.Degrees == 90)
+                {
+                    // Right triangle with B as the right angle (on the left)
+                    _actualHeight = _baseTriangle.A.Side.Value;
+                    _actualWidth = _baseTriangle.C.Side.Value;
+                }
+                else if (_baseTriangle.A.Vertex.Degrees <= 90 && _baseTriangle.B.Vertex.Degrees <= 90)
+                {
+                    // Internal alternate triangle when both angles are less than 90 - only determines height
+                    _actualHeight = _baseTriangle.AltTriangle?.B.Side.Value ?? 0;
+                    _actualWidth = _baseTriangle.C.Side.Value;
+                }
+                else
+                {
+                    // External alternate triangle when one angle is greater than 90 - determines height and width
+                    _actualHeight = _baseTriangle.AltTriangle?.B.Side.Value ?? 0;
+                    _actualWidth = _baseTriangle.C.Side.Value + (_baseTriangle.AltTriangle?.C.Side.Value ?? 0);
+                }
 
-            // Scale the triangle
-            Scale();
+                // Scale the triangle
+                Scale();
+            }
 
             // Calculate the points for the main triangle
-            GetPoints(_scaleTriangle, ref MainPoints);
+            GetPoints(_scaleTriangle, ref PrimaryPoints, ref AlternatePoints);
 
-            if (_scaleTriangle.AltTriangle != null)
-            {
-                // calculate alternate points too
-                GetPoints(_scaleTriangle.AltTriangle, ref AltPoints);
-            }
         }
 
         /// <summary>
@@ -1341,40 +1943,70 @@ namespace triggy
         /// </summary>
         void Scale()
         {
-            if (_scaleTriangle != null)
-            {
-                // Determine the available space in the workarea
-                double availableWidth = Width - FRM.INSET2;
-                double availableHeight = Height - FRM.INSET2;
+            // Determine the available space in the workarea
+            double availableWidth = Width - FRM.INSET2;
+            double availableHeight = Height - FRM.INSET2;
 
-                // Calculate the scaling factor
-                double widthScale = availableWidth / _actualWidth;
-                double heightScale = availableHeight / _actualHeight;
-                double scaleFactor = Math.Min(widthScale, heightScale);
+            // Calculate the scaling factor
+            double widthScale = availableWidth / _actualWidth;
+            double heightScale = availableHeight / _actualHeight;
+            double scaleFactor = Math.Min(widthScale, heightScale);
 
-                // update the Scale triangle to suit the scale factor
-                _scaleTriangle?.Scale(scaleFactor);
+            // update the Scale triangle to suit the scale factor
+            _scaleTriangle.Scale(scaleFactor);
 
-                Debug.WriteLine($"Scale Factor: {scaleFactor}, Actual Width: {_actualWidth}, Height: {_actualHeight}");
-            }
+            Debug.WriteLine($"Scale Factor: {scaleFactor}, Actual Width: {_actualWidth}, Height: {_actualHeight}");
         }
 
-
         /// <summary>
-        /// Calculate the points of the triangle
+        /// Calculate all the points of the triangles
         /// </summary>
         /// <param name="triangle">Specify the triangle data from which points are derived</param>
-        /// <param name="trio">Specify the reference in which points will be returned</param>
-        void GetPoints(TriangleSolver triangle, ref PointTrio trio)
+        /// <param name="primaryPoints">Specify the reference to which primary points will be returned</param>
+        /// <param name="alternatePoints">Specify the reference to which secondary points may be retured</param>
+        void GetPoints(TriangleSolver triangle, ref PointTrio primaryPoints, ref PointTrio alternatePoints)
         {
-            if (triangle == null)
-            {
-                // clear all points
-                trio.Clear();
+            // clear all points to begin
+            primaryPoints.Clear();
+            alternatePoints.Clear();
 
-                // exit void
-                return;
+            // determine if triangle contains complete data to calculate points
+            if (triangle.IsComplete)
+            {
+                // Calculate Primary Points (standard calculation, fit triangle to workarea)
+                primaryPoints = GetStandardPoints(triangle);
+
+                // Calculate Alternate Points based on conditions
+                if (triangle.AltTriangle != null && triangle.AltTriangle.IsSufficient)
+                {
+                    if (triangle.B.Vertex.Degrees > 90)
+                    {
+                        // Mirror the alternate triangle and place on left
+                        alternatePoints = GetInvertedPoints(triangle.AltTriangle, primaryPoints.P1);
+                    }
+                    else if (triangle.A.Vertex.Degrees > 90)
+                    {
+                        // Offset the alternate triangle to place on right
+                        alternatePoints = GetOffsetPoints(triangle.AltTriangle, primaryPoints.P1, (int)triangle.C.Side.Value);
+                    }
+                    else if (triangle.A.Vertex.Degrees < 90 && triangle.B.Vertex.Degrees < 90)
+                    {
+                        // Calculate alternate points using the same formula as the primary and place internally
+                        alternatePoints = GetStandardPoints(triangle.AltTriangle);
+                    }
+                }
             }
+
+        }
+
+        /// <summary>
+        /// Determine point trio within workarea to suit <paramref name="triangle"/> data
+        /// </summary>
+        /// <param name="triangle"></param>
+        /// <returns></returns>
+        PointTrio GetStandardPoints(TriangleSolver triangle)
+        {
+            PointTrio points = new();
 
             // Start P1 (Bottom Left) at the default position
             int p1_x = Left + FRM.INSET;
@@ -1386,128 +2018,77 @@ namespace triggy
                 p1_x += (int)triangle.AltTriangle.C.Side.Value;
             }
 
-            trio.P1 = new Point(p1_x, p1_y);
+            points.P1 = new Point(p1_x, p1_y);
 
             // Place P2 (Bottom Right) along the x-axis
-            int p2_x = trio.P1.X + (int)triangle.C.Side.Value;
-            int p2_y = trio.P1.Y;
-            trio.P2 = new Point(p2_x, p2_y);
+            int p2_x = points.P1.X + (int)triangle.C.Side.Value;
+            int p2_y = points.P1.Y;
+            points.P2 = new Point(p2_x, p2_y);
 
-            // Calculate P3 (Top) using _p2, angle A, and side B
+            // Calculate P3 (Top) using P2, angle A, and side B
             double angleA = triangle.A.Vertex.Radians;
             double sideB = triangle.B.Side.Value;
-            int p3_x_from_p2 = trio.P2.X - (int)(sideB * Math.Cos(angleA));
-            int p3_y_from_p2 = trio.P2.Y - (int)(sideB * Math.Sin(angleA));
-            Point p3_from_p2 = new Point(p3_x_from_p2, p3_y_from_p2);
+            int p3_x_from_p2 = points.P2.X - (int)(sideB * Math.Cos(angleA));
+            int p3_y_from_p2 = points.P2.Y - (int)(sideB * Math.Sin(angleA));
+            points.P3 = new Point(p3_x_from_p2, p3_y_from_p2);
 
-            // Calculate P3 (Top) using _p1, angle B, and side A
-            double angleB = triangle.B.Vertex.Radians;
-            double sideA = triangle.A.Side.Value;
-            int p3_x_from_p1 = trio.P1.X + (int)(sideA * Math.Cos(angleB));
-            int p3_y_from_p1 = trio.P1.Y - (int)(sideA * Math.Sin(angleB));
-            Point p3_from_p1 = new Point(p3_x_from_p1, p3_y_from_p1);
-
-            // Use one of the calculated points as the final P3
-            trio.P3 = p3_from_p2; // should be the same or very close
-
-            Debug.WriteLine($"_p1: {trio.P1}, _p2: {trio.P2}, _p3a: {p3_from_p1}, _p3b {p3_from_p2}");
+            return points;
         }
 
-        void OnResize(object? sender, EventArgs e)
+        /// <summary>
+        /// Invert <paramref name="triangle"/> point data (mirror) around <paramref name="referenceP1"/>
+        /// </summary>
+        /// <param name="triangle"></param>
+        /// <param name="referenceP1"></param>
+        /// <returns></returns>
+        static PointTrio GetInvertedPoints(TriangleSolver triangle, Point referenceP1)
         {
-            // recalculate the workarea bounds
-            Scale();
+            PointTrio points = new();
 
-            if (_scaleTriangle != null)
-            {
-                // Calculate the points for the main triangle
-                GetPoints(_scaleTriangle, ref MainPoints);
+            // P1 remains the same as the reference point
+            points.P1 = referenceP1;
 
-                if (_scaleTriangle.AltTriangle != null)
-                {
-                    // calculate alternate points too
-                    GetPoints(_scaleTriangle.AltTriangle, ref AltPoints);
-                }
-            }
+            // P2 is mirrored to the left
+            points.P2 = new Point(referenceP1.X - (int)triangle.C.Side.Value, referenceP1.Y);
+
+            // P3 is calculated using the mirrored P2
+            double angleA = triangle.A.Vertex.Radians;
+            double sideB = triangle.B.Side.Value;
+            int p3_x_from_p2 = points.P2.X + (int)(sideB * Math.Cos(angleA));
+            int p3_y_from_p2 = points.P2.Y - (int)(sideB * Math.Sin(angleA));
+            points.P3 = new Point(p3_x_from_p2, p3_y_from_p2);
+
+            return points;
         }
 
+        /// <summary>
+        /// Offset <paramref name="triangle"/> point data from <paramref name="referenceP1"/> by an <paramref name="offset"/> amount
+        /// </summary>
+        /// <param name="triangle"></param>
+        /// <param name="referenceP1"></param>
+        /// <param name="offset"></param>
+        /// <returns></returns>
+        static PointTrio GetOffsetPoints(TriangleSolver triangle, Point referenceP1, int offset)
+        {
+            PointTrio points = new();
+
+            // P1 is offset by the given distance
+            points.P1 = new Point(referenceP1.X + offset, referenceP1.Y);
+
+            // P2 is calculated based on the offset P1
+            points.P2 = new Point(points.P1.X + (int)triangle.C.Side.Value, points.P1.Y);
+
+            // P3 is calculated using the offset P2
+            double angleA = triangle.A.Vertex.Radians;
+            double sideB = triangle.B.Side.Value;
+            int p3_x_from_p2 = points.P2.X - (int)(sideB * Math.Cos(angleA));
+            int p3_y_from_p2 = points.P2.Y - (int)(sideB * Math.Sin(angleA));
+            points.P3 = new Point(p3_x_from_p2, p3_y_from_p2);
+
+            return points;
+        }
 
     } // Workarea
-
-
-
-    /// <summary>
-    /// Collection of points that can be used to define a triangle
-    /// </summary>
-    internal class PointTrio
-    {
-        internal Point P1 { get; set; }
-        internal Point P2 { get; set; }
-        internal Point P3 { get; set; }
-
-        /// <summary>
-        /// Define empty collection of points
-        /// </summary>
-        internal PointTrio()
-        {
-            P1 = new();
-            P2 = new();
-            P3 = new();
-        }
-
-        /// <summary>
-        /// Define collection of points that can be used to define a triangle
-        /// </summary>
-        /// <param name="p1"></param>
-        /// <param name="p2"></param>
-        /// <param name="p3"></param>
-        internal PointTrio(Point p1, Point p2, Point p3)
-        {
-            P1 = p1;
-            P2 = p2;
-            P3 = p3;
-        }
-
-        /// <summary>
-        /// Define collection of points that can be used to define a triangle
-        /// </summary>
-        /// <param name="pointTrio"></param>
-        internal PointTrio(PointTrio pointTrio)
-        {
-            P1 = pointTrio.P1;
-            P2 = pointTrio.P2;
-            P3 = pointTrio.P3;
-        }
-
-        /// <summary>
-        /// Gets value indicating whether any points are empty
-        /// </summary>
-        internal bool IsEmpty
-        {
-            get
-            {
-                return P1.IsEmpty || P2.IsEmpty || P3.IsEmpty;
-            }
-        }
-
-        internal void Clear()
-        {
-            P1 = new();
-            P2 = new();
-            P3 = new();
-        }
-
-        /// <summary>
-        /// Returns the trio of <see cref="Point"/> objects as an array
-        /// </summary>
-        /// <returns></returns>
-        internal Point[] ToArray()
-        {
-            return [P1, P2, P3];
-        }
-
-    } // PointTrio
-
 }
 
 
