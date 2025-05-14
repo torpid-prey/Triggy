@@ -213,144 +213,119 @@ namespace triggy
             // use default equality check between Angle objects
             return EqualityComparer<Angle>.Default.Equals(left, right);
         }
+        public static bool operator ==(Angle left, double right)
+        {
+            return left.Equals(right);
+        }
+        public static bool operator ==(double left, Angle right)
+        {
+            return left.Equals(right.Degrees);
+        }
 
         public static bool operator !=(Angle left, Angle right)
         {
             return !(left == right);
+        }
+        public static bool operator !=(Angle left, double right)
+        {
+            return !left.Equals(right);
+        }
+        public static bool operator !=(double left, Angle right)
+        {
+            return !left.Equals(right.Degrees);
         }
 
         public static bool operator <(Angle left, Angle right)
         {
             return left.CompareTo(right) < 0;
         }
+        public static bool operator <(Angle left, double right)
+        {
+            return left.CompareTo(right) < 0;
+        }
+        public static bool operator <(double left, Angle right)
+        {
+            return left.CompareTo(right.Degrees) < 0;
+        }
 
         public static bool operator >(Angle left, Angle right)
         {
             return left.CompareTo(right) > 0;
+        }
+        public static bool operator >(Angle left, double right)
+        {
+            return left.CompareTo(right) > 0;
+        }
+        public static bool operator >(double left, Angle right)
+        {
+            return left.CompareTo(right.Degrees) > 0;
         }
 
         public static bool operator <=(Angle left, Angle right)
         {
             return left.CompareTo(right) <= 0;
         }
+        public static bool operator <=(Angle left, double right)
+        {
+            return left.CompareTo(right) <= 0;
+        }
+        public static bool operator <=(double left, Angle right)
+        {
+            return left.CompareTo(right.Degrees) <= 0;
+        }
 
         public static bool operator >=(Angle left, Angle right)
         {
             return left.CompareTo(right) >= 0;
+        }
+        public static bool operator >=(Angle left, double right)
+        {
+            return left.CompareTo(right) >= 0;
+        }
+        public static bool operator >=(double left, Angle right)
+        {
+            return left.CompareTo(right.Degrees) >= 0;
         }
 
         public static double operator +(Angle left, Angle right)
         {
             return left.Degrees + right.Degrees;
         }
-
-        public static double operator -(Angle left, Angle right)
-        {
-            return left.Degrees - right.Degrees;
-        }
-
-        // double operators on right
-
-        public static bool operator ==(Angle left, double right)
-        {
-            return left.Equals(right);
-        }
-
-        public static bool operator !=(Angle left, double right)
-        {
-            return !left.Equals(right);
-        }
-
-        public static bool operator <(Angle left, double right)
-        {
-            return left.CompareTo(right) < 0;
-        }
-
-        public static bool operator >(Angle left, double right)
-        {
-            return left.CompareTo(right) > 0;
-        }
-
-        public static bool operator <=(Angle left, double right)
-        {
-            return left.CompareTo(right) <= 0;
-        }
-
-        public static bool operator >=(Angle left, double right)
-        {
-            return left.CompareTo(right) >= 0;
-        }
-
         public static double operator +(Angle left, double right)
         {
             return left.Degrees + right;
         }
-
-        public static double operator -(Angle left, double right)
-        {
-            return left.Degrees - right;
-        }
-
-
-        // double operators on left
-
-        public static bool operator ==(double left, Angle right)
-        {
-            return left.Equals(right.Degrees);
-        }
-
-        public static bool operator !=(double left, Angle right)
-        {
-            return !left.Equals(right.Degrees);
-        }
-
-        public static bool operator <(double left, Angle right)
-        {
-            return left.CompareTo(right.Degrees) < 0;
-        }
-
-        public static bool operator >(double left, Angle right)
-        {
-            return left.CompareTo(right.Degrees) > 0;
-        }
-
-        public static bool operator <=(double left, Angle right)
-        {
-            return left.CompareTo(right.Degrees) <= 0;
-        }
-
-        public static bool operator >=(double left, Angle right)
-        {
-            return left.CompareTo(right.Degrees) >= 0;
-        }
-
         public static double operator +(double left, Angle right)
         {
             return left + right.Degrees;
         }
 
+        public static double operator -(Angle left, Angle right)
+        {
+            return left.Degrees - right.Degrees;
+        }
+        public static double operator -(Angle left, double right)
+        {
+            return left.Degrees - right;
+        }
         public static double operator -(double left, Angle right)
         {
             return left - right.Degrees;
         }
-
-        // Multiplication
+       
         public static double operator *(Angle left, Angle right)
         {
             return left.Degrees * right.Degrees;
         }
-
         public static double operator *(Angle left, double right)
         {
             return left.Degrees * right;
         }
-
         public static double operator *(double left, Angle right)
         {
             return left * right.Degrees;
         }
 
-        // Division
         public static double operator /(Angle left, Angle right)
         {
             if (right.Degrees == 0)
@@ -359,7 +334,6 @@ namespace triggy
             }
             return left.Degrees / right.Degrees;
         }
-
         public static double operator /(Angle left, double right)
         {
             if (right == 0)
@@ -368,7 +342,6 @@ namespace triggy
             }
             return left.Degrees / right;
         }
-
         public static double operator /(double left, Angle right)
         {
             if (right.Degrees == 0)
@@ -504,145 +477,119 @@ namespace triggy
         {
             return EqualityComparer<Length>.Default.Equals(left, right);
         }
+        public static bool operator ==(Length left, double right)
+        {
+            return left.Equals(right);
+        }
+        public static bool operator ==(double left, Length right)
+        {
+            return left.Equals(right.Value);
+        }
 
         public static bool operator !=(Length left, Length right)
         {
             return !(left == right);
+        }
+        public static bool operator !=(Length left, double right)
+        {
+            return !left.Equals(right);
+        }
+        public static bool operator !=(double left, Length right)
+        {
+            return !left.Equals(right.Value);
         }
 
         public static bool operator <(Length left, Length right)
         {
             return left.CompareTo(right) < 0;
         }
+        public static bool operator <(Length left, double right)
+        {
+            return left.CompareTo(right) < 0;
+        }
+        public static bool operator <(double left, Length right)
+        {
+            return left.CompareTo(right.Value) < 0;
+        }
 
         public static bool operator >(Length left, Length right)
         {
             return left.CompareTo(right) > 0;
+        }
+        public static bool operator >(Length left, double right)
+        {
+            return left.CompareTo(right) > 0;
+        }
+        public static bool operator >(double left, Length right)
+        {
+            return left.CompareTo(right.Value) > 0;
         }
 
         public static bool operator <=(Length left, Length right)
         {
             return left.CompareTo(right) <= 0;
         }
-
-        public static bool operator >=(Length left, Length right)
-        {
-            return left.CompareTo(right) >= 0;
-        }
-
-        // double operators on right
-
-        public static bool operator ==(Length left, double right)
-        {
-            return left.Equals(right);
-        }
-
-        public static bool operator !=(Length left, double right)
-        {
-            return !left.Equals(right);
-        }
-
-        public static bool operator <(Length left, double right)
-        {
-            return left.CompareTo(right) < 0;
-        }
-
-        public static bool operator >(Length left, double right)
-        {
-            return left.CompareTo(right) > 0;
-        }
-
         public static bool operator <=(Length left, double right)
         {
             return left.CompareTo(right) <= 0;
         }
-
-        public static bool operator >=(Length left, double right)
-        {
-            return left.CompareTo(right) >= 0;
-        }
-
-        // double operators on left
-
-        public static bool operator ==(double left, Length right)
-        {
-            return left.Equals(right.Value);
-        }
-
-        public static bool operator !=(double left, Length right)
-        {
-            return !left.Equals(right.Value);
-        }
-
-        public static bool operator <(double left, Length right)
-        {
-            return left.CompareTo(right.Value) < 0;
-        }
-
-        public static bool operator >(double left, Length right)
-        {
-            return left.CompareTo(right.Value) > 0;
-        }
-
         public static bool operator <=(double left, Length right)
         {
             return left.CompareTo(right.Value) <= 0;
         }
 
+        public static bool operator >=(Length left, Length right)
+        {
+            return left.CompareTo(right) >= 0;
+        }
+        public static bool operator >=(Length left, double right)
+        {
+            return left.CompareTo(right) >= 0;
+        }
         public static bool operator >=(double left, Length right)
         {
             return left.CompareTo(right.Value) >= 0;
         }
 
-        // Addition
         public static double operator +(Length left, Length right)
         {
             return left.Value + right.Value;
         }
-
         public static double operator +(Length left, double right)
         {
             return left.Value + right;
         }
-
         public static double operator +(double left, Length right)
         {
             return left + right.Value;
         }
 
-        // Subtraction
         public static double operator -(Length left, Length right)
         {
             return left.Value - right.Value;
         }
-
         public static double operator -(Length left, double right)
         {
             return left.Value - right;
         }
-
         public static double operator -(double left, Length right)
         {
             return left - right.Value;
         }
 
-        // Multiplication
         public static double operator *(Length left, Length right)
         {
             return left.Value * right.Value;
         }
-
         public static double operator *(Length left, double right)
         {
             return left.Value * right;
         }
-
         public static double operator *(double left, Length right)
         {
             return left * right.Value;
         }
 
-        // Division
         public static double operator /(Length left, Length right)
         {
             if (right.Value == 0)
@@ -651,7 +598,6 @@ namespace triggy
             }
             return left.Value / right.Value;
         }
-
         public static double operator /(Length left, double right)
         {
             if (right == 0)
@@ -660,7 +606,6 @@ namespace triggy
             }
             return left.Value / right;
         }
-
         public static double operator /(double left, Length right)
         {
             if (right.Value == 0)
@@ -669,6 +614,7 @@ namespace triggy
             }
             return left / right.Value;
         }
+
 
         /// <summary>
         /// Converts numeric value of this instance to its equivalent string, to two decimal places
@@ -950,7 +896,7 @@ namespace triggy
                     Vertex.Radians = Math.Asin(_asin);
 
                     // angle must be between 0 and 180 (not inclusive)
-                    if (Vertex >= 0 && Vertex <= 180)
+                    if (Vertex > 0 && Vertex < 180)
                     {
                         // ensure angle found is within accepted limits
                         return true;
@@ -1224,23 +1170,23 @@ namespace triggy
             {
                 List<string> result =
                 [
-                    $"A° {_a.Vertex.Degrees:0.00}",
-                    $"a  {_a.Side.Value:0.00}",
-                    $"B° {_b.Vertex.Degrees:0.00}",
-                    $"b  {_b.Side.Value:0.00}",
-                    $"C° {_c.Vertex.Degrees:0.00}",
-                    $"c  {_c.Side.Value:0.00}",
+                    $"A° {_a.Vertex}",
+                    $"a  {_a.Side}",
+                    $"B° {_b.Vertex}",
+                    $"b  {_b.Side}",
+                    $"C° {_c.Vertex}",
+                    $"c  {_c.Side}",
                 ];
 
                 if (AltTriangle != null)
                 {
                     result.Add("");
-                    result.Add($"D° {AltTriangle._a.Vertex.Degrees:0.00}");
-                    result.Add($"d  {AltTriangle._a.Side.Value:0.00}");
-                    result.Add($"E° {AltTriangle._b.Vertex.Degrees:0.00}");
-                    result.Add($"e  {AltTriangle._b.Side.Value:0.00}");
-                    result.Add($"F° {AltTriangle._c.Vertex.Degrees:0.00}");
-                    result.Add($"f  {AltTriangle._c.Side.Value:0.00}");
+                    result.Add($"D° {AltTriangle._a.Vertex}");
+                    result.Add($"d  {AltTriangle._a.Side}");
+                    result.Add($"E° {AltTriangle._b.Vertex}");
+                    result.Add($"e  {AltTriangle._b.Side}");
+                    result.Add($"F° {AltTriangle._c.Vertex}");
+                    result.Add($"f  {AltTriangle._c.Side}");
                 }
 
                 return result.ToArray();
